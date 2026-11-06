@@ -1,0 +1,9 @@
+import {useState} from 'react';
+import {FileText,Download,ArrowUpRight} from 'lucide-react';
+export default function Results({result,dirty}){
+ const [tab,setTab]=useState('硬性规范');
+
+ return <section className="results"><div className="result-head"><h2>审核结论</h2><div className="tabs">{['硬性规范','经验建议','用户需求','资料核对','图像报告'].map(t=><button className={tab===t?'active':''} key={t} onClick={()=>setTab(t)}>{t}</button>)}</div>{result?<a className="export" href={"/api/evaluations/"+result.id+"/download"}><Download size={14}/>导出</a>:null}</div>
+ {!result?<div className="empty result-empty"><FileText size={28} strokeWidth={1.3}/><div>完成资料与配置后生成评估。<small>未知值保留未确定，不以模型猜测代替证据。</small></div></div>:<><div className="result-notice"><h3>总体评估结果</h3><p>{dirty?'配置或图像报告已修改；以下为上次评估快照，请重新评估。':result.summary}</p><small>{new Date(result.created_at).toLocaleString()} · 规则 {result.rule_version} · {result.issues} 项参数差距 · {result.visual_risks||0} 项图像风险线索 · {result.unknown} 项未确定</small></div>{result.results.filter(r=>r.layer===tab).map(r=>{const src=result.sources.find(s=>s.id===r.source);return <article className="result-row" key={r.id}><div className="result-title"><h3>{r.title}</h3><span className={'status '+(['不满足需求','低于标准值','记录不满足'].includes(r.status)?'bad':['参数达到','达到需求','文本一致','记录已核对'].includes(r.status)?'good':'caution')}>{r.status}</span></div><p>{r.detail}</p><p className="advice">{r.layer==='经验建议'&&!r.advice.startsWith('据经验')?'据经验，'+r.advice:r.advice}</p><details><summary>依据与适用边界</summary><p>{src?.title||'本项目用户自定义目标'} · {src?.status||'非国家标准'}</p><p>{src?.excerpt||'比较当前录入参数与本项目目标。'}</p>{src?.url?<a href={src.url} target="_blank" rel="noreferrer">查看来源 <ArrowUpRight size={13}/></a>:null}</details></article>})}{!result.results.some(r=>r.layer===tab)?<div className="empty">{tab==='用户需求'?'尚未设置目标，请在「配置对照」中选择要求。':'本次评估没有该类记录。'}</div>:null}</>}
+ </section>
+}

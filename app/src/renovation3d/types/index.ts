@@ -1,0 +1,57 @@
+export type Facade = 'front' | 'back' | 'left' | 'right';
+export type View = Facade | 'perspective';
+export type ViewGroup = 'terrace' | 'base';
+export type Vec3 = [number, number, number];
+export type Rect = { x: number; y: number; width: number; height: number };
+export type Evidence = { page: number; status: 'drawing' | 'pending'; note: string };
+export type GlassType = 'low' | 'medium' | 'high';
+export type ModelReview = { status: 'reviewed' | 'pending'; note: string; evidence: string; reviewedAt: string };
+export type PurchaseRule = { reservePercent: number; piecesPerBox: number; fullBoxes: boolean };
+export type GlassUpgrade = { spec: '5' | '6' | '8' | '10'; pricePerM2: number };
+export type QuoteConfiguration = { openingId: string; widthMm: number; heightMm: number; frameColor: string; glassType: GlassType; mode: string; sashCount: number; pricePerM2: number; sashPrice: number; glassUpgrade?: GlassUpgrade };
+export type WindowQuote = { id: string; status: 'estimate' | 'merchant' | 'confirmed'; source: string; date: string; checked: boolean; configuration: QuoteConfiguration };
+export type WindowFinish = { frameColor: string; glassType: GlassType; name?: string; pricePerM2?: number; sashPrice?: number; sashCount?: number; quotes?: WindowQuote[]; glassUpgrade?: GlassUpgrade };
+export type WindowDesign = { mode: 'fixed' | 'sliding' | 'casement' | 'top-hung'; columns: number[]; rows?: number[]; operablePanels?: number[]; note: string };
+export type Opening = Rect & { id: string; kind: 'window' | 'door' | 'balcony'; evidence: Evidence; design?: WindowDesign };
+export type FinishZone = Rect & { materialId: string; offsetMm: number; faceKey?: string; backMm?: number };
+export type Wall = {
+  viewGroup?: ViewGroup;
+  id: string; floorId: string; facade: Facade; originMm: Vec3; rotationY: number;
+  widthMm: number; heightMm: number; thicknessMm: number; topCoveredMm?: number; evidence: Evidence;
+  rotationX?: number; surfaceOnly?: boolean; surfaceKind?: 'wall' | 'outdoor-floor' | 'inner-wall' | 'relief-return' | 'exposed-surface'; surfaceCuts?: Rect[];
+  tileGridDatum?: Facade; tileGridBoundsMm?: Rect;
+  claddingMm?: number; finishSourceFaceId?: string; finishSourcePointMm?: [number, number];
+  openings: Opening[]; finishZones: FinishZone[];
+};
+export type WallFaceMember = {
+  viewGroup?: ViewGroup;
+  previousFaceId?: string; previousSourceFaceId?: string;
+  wallId: string; sourceFaceId: string; offsetMm: number; shiftMm: [number, number];
+  rects: Rect[]; holes: Rect[]; zones: FinishZone[];
+};
+export type WallFace = {
+  mergedFaceIds?: string[];
+  viewGroup?: ViewGroup;
+  id: string; wallId: string; floorId: string; facade: Facade; offsetMm: number; category?: 'wall' | 'ceiling' | 'floor'; previousFaceId?: string;
+  originMm: Vec3; rotationY: number; rotationX?: number; surfaceKind?: Wall['surfaceKind']; faceKey?: string; gridBoundsMm: Rect; sourceWallIds: string[]; members: WallFaceMember[];
+  rects: Rect[]; holes: Rect[]; zones: FinishZone[]; claddingMm?: number; legacyFaceId?: string; legacyFaceIds?: string[];
+};
+export type Part = { viewGroup?: ViewGroup; id: string; floorId: string; kind: 'slab' | 'parapet' | 'rail' | 'step' | 'screen'; centerMm: Vec3; sizeMm: Vec3; color: string;
+  screen?: { slatWidthMm: number; gapMm: number; frameWidthMm: number } };
+export type Floor = { id: string; label: string; elevationMm: number; heightMm: number; footprintMm: { width: number; depth: number; centerZ: number }; evidence: Evidence };
+export type TileMaterial = { id: string; name: string; color: string; texture: 'plain' | 'stone' | 'concrete' | 'custom'; kind?: 'tile' | 'paint'; image?: string; pricePerM2?: number };
+export type TileSettings = { widthMm: number; heightMm: number; direction: 'horizontal' | 'vertical'; groutMm: number; groutColor: string; alignment: 'edge' | 'center' };
+export type Finish = { materialId: string; preserveZoning?: boolean } & TileSettings;
+export type TileStyle = { id: string; name: string; material: TileMaterial; finish: Finish; createdAt: string; updatedAt: string };
+export type BuildingConfig = {
+  id: string; name: string; schemaVersion: 1; unit: 'mm'; source: string; notes: string[];
+  viewGroups: { id: ViewGroup; label: string; floorId: string }[];
+  floors: Floor[]; walls: Wall[]; parts: Part[]; materials: TileMaterial[]; defaultTile: TileSettings;
+  structureColor: string;
+  tileDatums?: Record<Facade, { originMm: Vec3; widthMm: number; heightMm: number }>;
+  openings: { doorColor: string; frameMm: number; depthMm: number; frameColor: string; glassColor: string; glassOpacity: number; mullions: number };
+  scene: { targetMm: Vec3; cameraMm: Vec3; groundSizeMm: number; explosionMm: number; tileDepthMm: number; maxCellsPerWall: number; maxMaterials: number; maxTotalCells?: number; floorJointMm?: number };
+};
+export type TilePiece = Rect & { sourceTileId: string; row: number; col: number; uv: [number, number, number, number]; cut: boolean };
+export type Layout = { pieces: TilePiece[]; sourceTiles: number; cutTiles: number; narrowPieces: number; tileAreaMm2: number; netAreaMm2: number };
+export type RenovationState = { schemaVersion: 1; faceGroupingVersion?: 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11; buildingId: string; materials: TileMaterial[]; finishes: Record<string, Finish>; faceFinishes?: Record<string, Finish>; faceRegionFinishes?: Record<string, Finish>; windowFinishes?: Record<string, WindowFinish>; partColors?: Record<string, string>; modelReviews?: Record<string, ModelReview>; purchaseRules?: Record<string, PurchaseRule>; hiddenFloors: string[]; hiddenGroups?: ViewGroup[]; exploded: boolean; background?: 'studio' | 'sunny'; sunHour?: number };
